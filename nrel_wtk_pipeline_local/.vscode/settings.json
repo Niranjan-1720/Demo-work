@@ -1,0 +1,9 @@
+
+{
+  "python.defaultInterpreterPath": "python",
+  "python.analysis.typeCheckingMode": "basic",
+  "files.exclude": {
+    "**/.venv": true,
+    "**/__pycache__": true
+  }
+}

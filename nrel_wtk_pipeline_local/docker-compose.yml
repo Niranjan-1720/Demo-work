@@ -1,0 +1,104 @@
+
+# No 'version:' key — Compose v2 ignores it and warns; we remove it.
+
+x-airflow-common: &airflow-common
+  image: apache/airflow:3.1.5
+  environment:
+    &airflow-common-env
+    AIRFLOW__CORE__EXECUTOR: LocalExecutor
+    AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
+    AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
+    _PIP_ADDITIONAL_REQUIREMENTS: >-
+      requests python-dotenv pandas SQLAlchemy mysql-connector-python
+    # PYTHONPATH: /opt/airflow/app:/opt/airflow
+
+    # App/DAG variables (Compose will read these from .env)
+    NREL_API_KEY: ${NREL_API_KEY}
+    USER_FULL_NAME: ${USER_FULL_NAME}
+    USER_EMAIL: ${USER_EMAIL}
+    USER_AFFILIATION: ${USER_AFFILIATION}
+    USER_REASON: ${USER_REASON}
+    WTK_DATASET_PATH: ${WTK_DATASET_PATH}
+    WKT: ${WKT}
+    ATTRIBUTES: ${ATTRIBUTES}
+    YEARS: ${YEARS}
+    INTERVAL: ${INTERVAL}
+    UTC: ${UTC}
+    LEAP_DAY: ${LEAP_DAY}
+
+    DATA_DIR: /opt/airflow/data
+    RAW_DIR: /opt/airflow/data/raw
+    PROCESSED_DIR: /opt/airflow/data/processed
+    RATE_STATE_FILE: /opt/airflow/data/rate_state.json
+
+    # Windows-host MySQL (use host.docker.internal)
+    MYSQL_HOST: ${MYSQL_HOST}
+    MYSQL_PORT: ${MYSQL_PORT}
+    MYSQL_USER: ${MYSQL_USER}
+    MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    MYSQL_DB: ${MYSQL_DB}
+
+    # Make your /opt/airflow/app importable by DAGs
+    PYTHONPATH: /opt/airflow/app:/opt/airflow
+
+  volumes:
+    - ./airflow/dags:/opt/airflow/dags
+    - ./airflow/plugins:/opt/airflow/plugins
+    - ./app:/opt/airflow/app
+    - ./data:/opt/airflow/data
+  user: "50000:0"
+  depends_on:
+    - postgres
+    - redis
+
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: airflow
+      POSTGRES_DB: airflow
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "airflow"]
+      interval: 10s
+      retries: 5
+      start_period: 5s
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7
+    expose:
+      - 6379
+
+  airflow-webserver:
+    <<: *airflow-common
+    command: webserver
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/health || exit 1"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  airflow-scheduler:
+    <<: *airflow-common
+    command: scheduler
+
+  airflow-init:
+    <<: *airflow-common
+    command: bash -c "
+      airflow db migrate &&
+      airflow users create \
+        --username admin \
+        --password admin123 \
+        --firstname Niranjan \
+        --lastname Reddy \
+        --role Admin \
+        --email nreddy1720@gmail.com
+      "
+
+volumes:
+  pgdata:
