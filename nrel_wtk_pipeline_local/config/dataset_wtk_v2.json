@@ -1,0 +1,11 @@
+{
+  "dataset_path": "wind-toolkit/v2/wind/wtk-download",
+  "wkt": "POINT(-105.2705 40.0150)",
+  "attributes": "windspeed_100m,windspeed_80m,winddirection_100m,temperature_100m,pressure_100m",
+  "years": [
+    2007
+  ],
+  "interval": 60,
+  "utc": true,
+  "leap_day": false
+}

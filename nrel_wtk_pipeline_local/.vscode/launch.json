@@ -1,0 +1,14 @@
+
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Run once (local)",
+      "type": "python",
+      "request": "launch",
+      "program": "${workspaceFolder}/run_once.py",
+      "console": "integratedTerminal",
+      "envFile": "${workspaceFolder}/.env"
+    }
+  ]
+}
